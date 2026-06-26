@@ -14,7 +14,8 @@ const char* password = "internet2";
 LiquidCrystal_I2C lcd(0x3F, 16, 2); 
 
 // --- URL-uri Open-Meteo (Craiova) ---
-const char* weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=44.33&longitude=23.79&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure,uv_index&timezone=Europe/Bucharest";
+// Am inlocuit surface_pressure cu pressure_msl
+const char* weatherUrl = "https://api.open-meteo.com/v1/forecast?latitude=44.33&longitude=23.79&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,pressure_msl,uv_index&timezone=Europe/Bucharest";
 const char* airQualityUrl = "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=44.33&longitude=23.79&current=european_aqi";
 
 // --- Variabile globale pentru Vreme ---
@@ -23,7 +24,7 @@ int umiditate = 0;
 int codVreme = 0;
 float vitezaVant = 0.0;
 int directieVant = 0;
-float presiune = 0.0; // Va fi descarcata in hPa
+float presiune = 0.0; 
 float uvIndex = 0.0;
 int aqi = -1; 
 
@@ -34,6 +35,11 @@ const unsigned long intervalSchimb = 3000; // 3 secunde
 
 unsigned long ultimaActualizareVreme = 0;
 const unsigned long intervalActualizare = 600000; // 10 minute
+
+// --- Variabile pentru verificare Wi-Fi ---
+bool esteConectat = true;
+unsigned long ultimaVerificareWifi = 0;
+const unsigned long intervalVerificareWifi = 5000; // Verifica la fiecare 5 secunde
 
 WiFiClientSecure client;
 
@@ -64,6 +70,42 @@ void setup() {
 }
 
 void loop() {
+  // ==========================================
+  // VERIFICARE PERIODICĂ WI-FI
+  // ==========================================
+  if (millis() - ultimaVerificareWifi >= intervalVerificareWifi) {
+    ultimaVerificareWifi = millis();
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      if (!esteConectat) {
+        esteConectat = true;
+        lcd.clear();
+        Serial.println("Wi-Fi Reconectat cu succes!");
+        configTime("EET-2EEST,M3.5.0/3,M10.5.0/4", "pool.ntp.org", "time.nist.gov");
+        actualizeazaDate(); 
+      }
+    } else {
+      if (esteConectat) {
+        esteConectat = false;
+        lcd.clear();
+      }
+      lcd.setCursor(0, 0);
+      lcd.print("Wi-Fi Deconectat");
+      lcd.setCursor(0, 1);
+      lcd.print("Reconectare...  ");
+      
+      WiFi.disconnect();
+      WiFi.begin(ssid, password); 
+      return; 
+    }
+  }
+
+  if (!esteConectat) return;
+
+  // ==========================================
+  // AFISAJ NORMAL
+  // ==========================================
+  
   time_t now = time(nullptr);
   struct tm* timeinfo = localtime(&now);
 
@@ -84,7 +126,6 @@ void loop() {
   if (millis() - ultimulSchimb >= intervalSchimb) {
     ecranCurent++;
     
-    // Daca suntem pe ecranul de UV (4) si este noapte, sarim peste el
     if (ecranCurent == 4 && (timeinfo->tm_hour >= 20 || timeinfo->tm_hour < 6)) {
       ecranCurent = 5; 
     }
@@ -100,37 +141,37 @@ void loop() {
   lcd.setCursor(0, 1);
 
   switch (ecranCurent) {
-    case 0: // Temperatura si Umiditate
+    case 0: 
       sprintf(bufferRand2, " %4.1f%cC   %2d%%  ", temperatura, 223, umiditate);
       lcd.print(bufferRand2);
       break;
       
-    case 1: // Starea vremii (text lung)
+    case 1: 
       obtineTextVremeLung(codVreme, bufferRand2);
       lcd.print(bufferRand2);
       break;
       
-    case 2: // Vant
+    case 2: 
       char dirVant[4];
       obtineDirectieVant(directieVant, dirVant);
       sprintf(bufferRand2, "Vant %4.1fkm/h %-2s", vitezaVant, dirVant);
       lcd.print(bufferRand2);
       break;
       
-    case 3: // Presiune atmosferica IN mmHg
-      // Conversie: 1 hPa = 0.750062 mmHg
+    case 3: 
+      // Conversie hPa in mmHg
       sprintf(bufferRand2, "P: %5.1f mmHg   ", presiune * 0.750062);
       lcd.print(bufferRand2);
       break;
       
-    case 4: // Indice UV (doar ziua)
+    case 4: 
       char nivelUV[10];
       obtineNivelUV(uvIndex, nivelUV);
       sprintf(bufferRand2, "UV: %3.1f %-7s", uvIndex, nivelUV);
       lcd.print(bufferRand2);
       break;
       
-    case 5: // Indice Poluare (AQI)
+    case 5: 
       char calitateAer[10];
       obtineCalitateAer(aqi, calitateAer);
       if (aqi >= 0) {
@@ -142,7 +183,6 @@ void loop() {
       break;
   }
 
-  // Actualizeaza datele de la internet
   if (millis() - ultimaActualizareVreme > intervalActualizare) {
     actualizeazaDate();
   }
@@ -161,7 +201,6 @@ void actualizeazaDate() {
   lcd.setCursor(0, 1);
   lcd.print("Se incarca date ");
 
-  // 1. Descarcare Vreme
   HTTPClient httpWeather;
   httpWeather.begin(client, weatherUrl);
   int httpCode1 = httpWeather.GET();
@@ -176,14 +215,16 @@ void actualizeazaDate() {
       codVreme = doc["current"]["weather_code"].as<int>();
       vitezaVant = doc["current"]["wind_speed_10m"].as<float>();
       directieVant = doc["current"]["wind_direction_10m"].as<int>();
-      presiune = doc["current"]["surface_pressure"].as<float>(); // primit in hPa
+      
+      // Am schimbat cheia aici in pressure_msl
+      presiune = doc["current"]["pressure_msl"].as<float>(); 
+      
       uvIndex = doc["current"]["uv_index"].as<float>();
       Serial.println("Vreme actualizata cu succes.");
     }
   }
   httpWeather.end();
 
-  // 2. Descarcare Calitate Aer (AQI)
   HTTPClient httpAir;
   httpAir.begin(client, airQualityUrl);
   int httpCode2 = httpAir.GET();
