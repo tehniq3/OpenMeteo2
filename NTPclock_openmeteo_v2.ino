@@ -68,13 +68,15 @@ void setup() {
   Serial.println("\nWi-Fi conectat!");
   lcd.clear();
   lcd.print("Wi-Fi Conectat!");
-
+    
+  // Pornim NTP cu offset 0 (deoarece TZ se ocupa de offset)
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  
   // --- Setare ora Romaniei corect pentru ESP32 ---
   // Setam fusul orar POSIX (tine cont automat de ora de vara/iarna)
   setenv("TZ", "EET-2EEST,M3.5.0/3,M10.5.0/4", 1);
   tzset();
-  // Pornim NTP cu offset 0 (deoarece TZ se ocupa de offset)
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+
 
   client.setInsecure();
 
