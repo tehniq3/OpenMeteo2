@@ -7,8 +7,8 @@
 #include <time.h>
 
 // --- Configuratii Wi-Fi ---
-const char* ssid = "bbk2";
-const char* password = "internet2";
+const char* ssid = "wifi_name";
+const char* password = "wifi_password";
 
 // --- Configurare LCD ---
 LiquidCrystal_I2C lcd(0x3F, 16, 2); 
@@ -46,7 +46,7 @@ WiFiClientSecure client;
 void setup() {
   Serial.begin(115200);
   
-  lcd.begin();
+  lcd.begin();  // or lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
   lcd.print("Conectare Wi-Fi");
@@ -251,12 +251,12 @@ void actualizeazaDate() {
 
 void obtineTextVremeLung(int cod, char* outText) {
   switch(cod) {
-    case 0:   strcpy(outText, "       Clar    "); break;
+    case 0:   strcpy(outText, "       Cer Senin "); break;
     case 1:   
     case 2:   strcpy(outText, " Partial noros "); break;
     case 3:   strcpy(outText, "      Noros    "); break;
     case 45:  
-    case 48:  strcpy(outText, "      Cetza    "); break; 
+    case 48:  strcpy(outText, "      Ceata    "); break; 
     case 51:  
     case 53:  
     case 55:  strcpy(outText, "     Burnita   "); break;
@@ -297,7 +297,7 @@ void obtineDirectieVant(int grade, char* out) {
 void obtineNivelUV(float uv, char* out) {
   if (uv <= 2.9) strcpy(out, "Sczut");
   else if (uv <= 5.9) strcpy(out, "Mediu");
-  else if (uv <= 7.9) strcpy(out, "Ridic");
+  else if (uv <= 7.9) strcpy(out, "Ridicat");
   else if (uv <= 10.9) strcpy(out, "Foarte");
   else strcpy(out, "Extrem");
 }
