@@ -268,7 +268,7 @@ void obtineTextVremeLung(int cod, char* outText) {
     case 2:   strcpy(outText, " Partial noros "); break; 
     case 3:   strcpy(outText, "      Noros    "); break; 
     case 45:  
-    case 48:  strcpy(outText, "      Cetza    "); break; 
+    case 48:  strcpy(outText, "      Ceata    "); break; 
     case 51:  
     case 53:  
     case 55:  strcpy(outText, "     Burnita   "); break;
