@@ -7,8 +7,8 @@
 #include <time.h>
 
 // --- Configuratii Wi-Fi ---
-const char* ssid = "bbk2";
-const char* password = "internet2";
+const char* ssid = "wifi_name";
+const char* password = "wifi_password";
 
 // --- Configurare LCD ---
 LiquidCrystal_I2C lcd(0x3F, 16, 2); 
@@ -138,12 +138,12 @@ void actualizeazaVremea() {
 // Functie care returneaza text LUNG (fara diacritice) pentru vreme, adaptat la 16 caractere
 void obtineTextVremeLung(int cod, char* outText) {
   switch(cod) {
-    case 0:   strcpy(outText, "       Clar    "); break;
+    case 0:   strcpy(outText, "       Senin    "); break;
     case 1:   
     case 2:   strcpy(outText, " Partial noros "); break;
     case 3:   strcpy(outText, "      Noros    "); break;
     case 45:  
-    case 48:  strcpy(outText, "      Cetza    "); break; // Ceață
+    case 48:  strcpy(outText, "      Ceata    "); break; // Ceață
     case 51:  
     case 53:  
     case 55:  strcpy(outText, "     Burnita   "); break;
