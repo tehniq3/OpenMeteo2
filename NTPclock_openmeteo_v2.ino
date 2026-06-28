@@ -265,7 +265,7 @@ void actualizeazaDate() {
 
 void obtineTextVremeLung(int cod, char* outText) {
   switch(cod) {
-    case 0:   strcpy(outText, "       Clar    "); break;
+    case 0:   strcpy(outText, "     Cer senin  "); break;
     case 1:   strcpy(outText, "Mai mult senin "); break; 
     case 2:   strcpy(outText, " Partial noros "); break; 
     case 3:   strcpy(outText, "      Noros    "); break; 
